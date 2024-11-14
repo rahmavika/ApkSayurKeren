@@ -76,42 +76,32 @@ class PengelolaController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-{
-    // Validasi data yang dikirim
-    $validated = $request->validate([
-        'username' => 'required|min:3', // Validasi username
-        'email' => 'required|email|max:255|unique:penggunas,email,' . $id, // Validasi email, mengecualikan pengelola yang sedang diedit
-        'nohp' => 'nullable|string|max:15', // Validasi No HP
-        'password' => 'nullable|min:4|confirmed', // Validasi password hanya jika diisi
-    ]);
+    {
+        // Validasi data yang dikirim
+        $validated = $request->validate([
+            'username' => 'required|min:3', // Validasi username
+            'nohp' => 'nullable|string|max:15', // Validasi No HP
+        ]);
 
-    try {
-        // Temukan pengelola yang akan diupdate
-        $pengelola = Pengguna::findOrFail($id);
+        try {
+            // Temukan pengelola yang akan diupdate
+            $pengelola = Pengguna::findOrFail($id);
 
-        // Update data pengguna
-        $pengelola->username = $validated['username'];
-        $pengelola->email = $validated['email'];
-        $pengelola->nohp = $validated['nohp'];
+            // Update data pengguna
+            $pengelola->username = $validated['username'];
+            $pengelola->nohp = $validated['nohp'];
 
-        // Jika password diisi, maka update password, jika tidak, biarkan password lama
-        if (!empty($validated['password'])) {
-            $pengelola->password = Hash::make($validated['password']);
+            // Simpan perubahan
+            $pengelola->save();
+
+            // Redirect dengan pesan sukses
+            return redirect('/admin-pengelola')->with('pesan', 'Pengelola berhasil diperbarui!');
+        } catch (\Exception $e) {
+            // Tangani error jika ada
+            Log::error('Error saat memperbarui data pengelola: ' . $e->getMessage());
+            return redirect()->back()->withErrors('Terjadi kesalahan saat memperbarui data. Silakan coba lagi.');
         }
-
-        // Simpan perubahan
-        $pengelola->save();
-
-        // Redirect dengan pesan sukses
-        return redirect('/admin-pengelola')->with('pesan', 'Pengelola berhasil diperbarui!');
-    } catch (\Exception $e) {
-        // Tangani error jika ada
-        Log::error('Error saat memperbarui data pengelola: ' . $e->getMessage());
-        return redirect()->back()->withErrors('Terjadi kesalahan saat memperbarui data. Silakan coba lagi.');
     }
-}
-
-
 
     /**
      * Remove the specified resource from storage.

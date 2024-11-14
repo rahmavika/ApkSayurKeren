@@ -39,13 +39,13 @@
             <hr class="my-2 text-black">
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center gap-2 {{ request()->is('admin-pelanggan') ? 'active' : '' }}" href="#">
+                    <a class="nav-link d-flex align-items-center gap-2 {{ request()->is('admin-pelanggan') ? 'active' : '' }}" href="/admin-pelanggan">
                         <i class="bi bi-people"></i>
                         Pelanggan
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center gap-2 {{ request()->is('admin-pelanggan') ? 'active' : '' }}" href="#">
+                    <a class="nav-link d-flex align-items-center gap-2 {{ request()->is('admin-pembelian') ? 'active' : '' }}" href="#">
                         <i class="bi bi-cart-fill"></i>
                         Pembelian
                     </a>
@@ -54,7 +54,7 @@
             <hr class="my-2 text-black">
             <ul class="nav flex-column">
                 <li class="nav-item">
-                    <a class="nav-link d-flex align-items-center gap-2 {{ request()->is('admin-pengelola') ? 'active' : '' }}" href="#">
+                    <a class="nav-link d-flex align-items-center gap-2 {{ request()->is('admin-pengelola') ? 'active' : '' }}" href="/admin-pengelola">
                         <i class="bi bi-person"></i>
                         Pengelola Pesanan
                     </a>

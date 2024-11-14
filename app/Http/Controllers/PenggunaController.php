@@ -14,7 +14,8 @@ class PenggunaController extends Controller
      */
     public function index()
     {
-        //
+        $penggunas = Pengguna::where('role', 'pelanggan')->paginate(10);
+        return view('admin.admin-pelanggan.index', compact('penggunas'));
     }
 
     /**
@@ -85,8 +86,9 @@ class PenggunaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Pengguna $pengguna)
+    public function destroy(string $id)
     {
-        //
+        Pengguna::destroy($id);
+        return redirect('admin-pelanggan')->with('pesan', 'Data berhasil dihapus');
     }
 }

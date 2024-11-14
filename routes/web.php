@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\KeranjangController;
+use App\Http\Controllers\PengelolaController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\StokController;
 use App\Models\Produk;
@@ -84,6 +85,13 @@ Route::resource('/admin-stok', StokController::class);
 Route::get('/admin-stok/{id}/tambahStok', [StokController::class, 'tambahStok'])->name('admin-stok.tambahStok');
 
 Route::resource('/admin-produk', ProdukController::class);
+
+Route::get('/admin-pelanggan', [PenggunaController::class, 'index'])->name('admin.admin-pelanggan.index');
+Route::delete('/admin-pelanggan/{id}', [PenggunaController::class, 'destroy'])->name('admin.admin-pelanggan.destroy');
+
+Route::resource('/admin-pengelola', PengelolaController::class);
+
+
 
 
 

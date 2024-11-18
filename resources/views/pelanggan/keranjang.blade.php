@@ -48,7 +48,7 @@
                             <h5>Total: Rp {{ number_format($totalHarga, 0, ',', '.') }}</h5>
                         </div>
                         <div class="text-center mt-4">
-                            <a href="/checkout" class="btn w-100 py-2" style="background-color: #0B773D; border-color: #0B773D; color: white;">Lanjutkan ke Pembayaran</a>
+                            <a href="/checkout" class="btn w-100 py-2" style="background-color: #0B773D; border-color: #0B773D; color: white;">Checkout</a>
                         </div>
                     </div>
                 </div>

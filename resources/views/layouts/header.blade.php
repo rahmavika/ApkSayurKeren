@@ -11,7 +11,7 @@
                 @if (session('username'))  <!-- Periksa apakah username ada di session -->
                     <a href="/detailpelanggan" style="color: #07582d; font-size: 16px; text-decoration: none;"> <!-- Tambahkan link -->
                         <span class="me-2"> <!-- Ubah warna dan ukuran font -->
-                            <i class="bi bi-person-fill" style="color: #07582d;"></i> {{ session('username') }}
+                            <i class="bi bi-person-fill" style="color: #07582d;" title="Akun"></i> {{ session('username') }}
                         </span> <!-- Tampilkan username dengan ikon -->
                     </a>
                     <form action="/logout" method="POST" style="display:inline;">
@@ -31,7 +31,7 @@
         <div class="container">
             <div class="logo">
                 <a href="/">
-                    <img src="{{ asset('images/sayurkeren.png') }}" alt="Sayur Keren" class="img-fluid">
+                    <img src="{{ asset('images/sayurkeren.png') }}" alt="Sayur Keren" class="img-fluid" title="Home">
                 </a>
             </div>
             <nav class="main-nav">
@@ -53,9 +53,12 @@
                 </form>
 
                 @if(session('username'))
-                    <!-- Jika user sudah login, arahkan ke halaman keranjang -->
-                    <a href="{{ url('/keranjang') }}">
+                    <!-- Jika user sudah login, arahkan ke halaman keranjang dan riwayat belanja -->
+                    <a href="{{ url('/keranjang') }}" title="Keranjang">
                         <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <a href="{{ url('/riwayat-belanja') }}" title="Riwayat Belanja" class="ms-3 {{ Request::is('riwayat-belanja') ? 'active' : '' }}">
+                        <i class="fas fa-history"></i>
                     </a>
                 @else
                     <!-- Jika belum login, munculkan modal login -->
@@ -64,6 +67,7 @@
                     </a>
                 @endif
             </div>
+
         </div>
     </div>
 </header>

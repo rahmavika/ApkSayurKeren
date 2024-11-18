@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\BatchStokController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\LoginController;
@@ -9,6 +11,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\PengelolaController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\RiwayatBelanjaController;
 use App\Http\Controllers\StokController;
 use App\Models\Produk;
 
@@ -82,14 +85,28 @@ Route::get('/keranjang', [KeranjangController::class, 'show'])->name('keranjang.
 
 Route::resource('/admin-kategori', KategoriController::class);
 Route::resource('/admin-stok', StokController::class);
+Route::resource('/admin-batchStok', BatchStokController::class);
 Route::get('/admin-stok/{id}/tambahStok', [StokController::class, 'tambahStok'])->name('admin-stok.tambahStok');
 
 Route::resource('/admin-produk', ProdukController::class);
+Route::get('/admin-batchStok/{produk_id}', [BatchStokController::class, 'show'])->name('batchstok.show');
+Route::get('/admin-batchStok/{id}/edit', [BatchStokController::class, 'edit'])->name('admin-batchStok.edit');
+Route::put('/admin-batchStok/{id}', [BatchStokController::class, 'update'])->name('admin-batchStok.update');
+
+Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show')->middleware('auth');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+Route::get('/checkout/{id}/detail', [CheckoutController::class, 'detail'])->name('checkout.detail');
+
+Route::get('/riwayat-belanja', [RiwayatBelanjaController::class, 'index'])->name('riwayat-belanja');
+Route::post('/upload-bukti/{id}', [RiwayatBelanjaController::class, 'uploadBukti'])->name('upload.bukti');
+
 
 Route::get('/admin-pelanggan', [PenggunaController::class, 'index'])->name('admin.admin-pelanggan.index');
 Route::delete('/admin-pelanggan/{id}', [PenggunaController::class, 'destroy'])->name('admin.admin-pelanggan.destroy');
 
 Route::resource('/admin-pengelola', PengelolaController::class);
+
+
 
 
 

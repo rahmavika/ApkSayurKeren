@@ -26,4 +26,9 @@ class Pengguna extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function checkouts()
+    {
+        return $this->hasMany(Checkout::class, 'user_id');
+    }
 }

@@ -19,8 +19,10 @@ class KeranjangController extends Controller
             return $keranjang->jumlah * $keranjang->harga;
         });
 
+        // Kirim data keranjang ke view
         return view('pelanggan.keranjang', compact('keranjangs', 'totalHarga'));
     }
+
 
 
     /**

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BatchStok;
 use App\Models\Keranjang;
+use App\Models\Stok;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -62,8 +64,43 @@ class CheckoutController extends Controller
         'alamat_pengiriman' => $request->alamat,
         'total_harga' => $totalHarga,
         'produk_details' => $produkDetails->toJson(),
-        'status' => 'pesanan diterima'
+        'status' => 'pesanan diterima',
     ]);
+
+    // Proses pengurangan stok
+    foreach ($keranjangs as $keranjang) {
+        $jumlahDibutuhkan = $keranjang->jumlah;
+
+        // Ambil batch stok berdasarkan produk dan urutan tanggal kadaluwarsa
+        $batchStoks = BatchStok::where('produk_id', $keranjang->produk_id)
+            ->orderBy('tgl_kadaluarsa', 'asc')
+            ->get();
+
+        foreach ($batchStoks as $batchStok) {
+            if ($jumlahDibutuhkan <= 0) {
+                break;
+            }
+
+            if ($batchStok->jumlah >= $jumlahDibutuhkan) {
+                // Kurangi langsung dari batch stok saat ini
+                $batchStok->jumlah -= $jumlahDibutuhkan;
+                $batchStok->save();
+                $jumlahDibutuhkan = 0;
+            } else {
+                // Habiskan jumlah batch stok dan lanjutkan ke batch berikutnya
+                $jumlahDibutuhkan -= $batchStok->jumlah;
+                $batchStok->jumlah = 0;
+                $batchStok->save();
+            }
+        }
+
+        // Update stok utama
+        $stok = Stok::where('produk_id', $keranjang->produk_id)->first();
+        if ($stok) {
+            $stok->jumlah -= $keranjang->jumlah;
+            $stok->save();
+        }
+    }
 
     // Hapus data dari tabel keranjangs
     Keranjang::where('pengguna_id', $user->id)->delete();
@@ -71,7 +108,6 @@ class CheckoutController extends Controller
     // Redirect ke halaman detail pesanan
     return redirect()->route('checkout.detail', $checkout->id);
 }
-
 
 
     /**

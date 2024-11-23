@@ -16,7 +16,10 @@ class Checkout extends Model
     protected $fillable = [
         'user_id',
         'alamat_pengiriman',
+        'latitude',
+        'longitude',
         'total_harga',
+        'ongkir',
         'produk_details',
         'tanggal_pemesanan',
         'status',

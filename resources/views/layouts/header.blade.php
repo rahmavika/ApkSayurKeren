@@ -16,7 +16,7 @@
                     </a>
                     <form action="/logout" method="POST" style="display:inline;">
                         @csrf
-                        <button type="submit" class="btn btn-link"><i class="bi bi-door-open"></i> LOGOUT</button>
+                        <button type="submit" class="btn btn-logout"><i class="bi bi-power"></i>Keluar</button>
                     </form>
                 @else
                     <button class="btn-login" style="border-color: #07582d; transition: background-color 0.3s, color 0.3s;" onclick="window.location.href='/login';">

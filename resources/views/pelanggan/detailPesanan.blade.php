@@ -12,6 +12,8 @@
                             <p><strong>Tanggal Pemesanan:</strong> {{ \Carbon\Carbon::parse($checkout->tanggal_pemesanan)->format('d F Y') }}</p>
                         </div>
 
+                        <hr style="border-top: 2px solid #0B773D; margin-bottom: 20px;">
+
                         <!-- Data Pelanggan -->
                         <div class="mb-4">
                             <h5 class="font-weight-bold">Data Pelanggan</h5>
@@ -36,6 +38,8 @@
                                 <p>User tidak ditemukan!</p>
                             @endif
                         </div>
+
+                        <hr style="border-top: 2px solid #0B773D; margin-bottom: 20px;">
 
                         <!-- Data Produk yang Dibeli -->
                         <div class="mb-4">
@@ -62,24 +66,45 @@
                             </table>
                         </div>
 
+                        <hr style="border-top: 2px solid #0B773D; margin-bottom: 20px;">
+
+                        <div class="mb-4 text-left">
+                            <h6 class="font-weight-bold">Total Belanja: <span>Rp {{ number_format($totalBelanja, 0, ',', '.') }}</span></h6>
+                        </div>
+
+                        <!-- Ongkir -->
+                        <div class="mb-4 text-left">
+                            <h6 class="font-weight-bold">Ongkir: <span>Rp {{ number_format($ongkir, 0, ',', '.') }}</span></h6>
+                        </div>
+
+                        <hr style="border-top: 2px solid #0B773D; margin-bottom: 20px;">
+
                         <!-- Total Pembayaran -->
-                        <div class="mb-4 text-center">
-                            <h5 class="font-weight-bold">Total Pembayaran: <span style="color: #0B773D;">Rp {{ number_format($checkout->total_harga, 0, ',', '.') }}</span></h5>
+                        <div class="mb-4 text-left">
+                            <h5 class="font-weight-bold" style="color: #0B773D;">Total Pembayaran: <span style="color: #0B773D;">Rp {{ number_format($checkout->total_harga, 0, ',', '.') }}</span></h5>
                         </div>
 
                         <!-- Informasi Pembayaran -->
-                        <div class="mb-4">
-                            <p>Bayar: <span style="font-weight: bold; color: #0B773D;">Mandiri</span> a/n <span style="font-weight: bold; color: #0B773D;">Kelompok B</span>, No Rekening: <span style="font-weight: bold; color: #0B773D;">1120290091890</span></p>
-                            <p style=" font-size: 0.75rem; color: red">*Lihat riwayat belanja untuk mengirim bukti pembayaran</small></p>
+                        <div class="mb-3 d-flex justify-content-center">
+                            <div class="border p-2" style="width: 80%; max-width: 600px; background-color: #f9f9f9; border-radius: 8px; border: 3px solid #0B773D; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                                <p class="mb-2">Bayar: <span style="font-weight: bold; color: #0B773D;">Mandiri</span> a/n <span style="font-weight: bold; color: #0B773D;">Kelompok B</span>, No Rekening: <span style="font-weight: bold; color: #0B773D;">1120290091890</span></p>
+                                <p style="font-size: 0.75rem; color: red;">
+                                    <a href="/riwayat-belanja" style="color: red; text-decoration: none;" title="Riwayat Belanja">*Klik untuk mengirim bukti pembayaran</a>
+                                </p>
+                            </div>
                         </div>
 
                         <!-- Footer Struk -->
-                        <div class="text-center mt-4">
+                        <div class="text-center mt-3">
                             <p><small>Terima kasih telah berbelanja di Sayur Keren!</small></p>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+        <!-- Tombol Kembali -->
+        <div>
+            <a href="/riwayat-belanja" class="btn btn-secondary">Kembali</a>
         </div>
     </div>
 </section>

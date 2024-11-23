@@ -31,9 +31,12 @@ class CheckoutController extends Controller
      */
     public function store(Request $request)
 {
-    // Validasi input alamat
+    // Validasi input termasuk lat, long, dan ongkir
     $request->validate([
         'alamat' => 'required|string|max:255',
+        'latitude' => 'required|numeric',
+        'longitude' => 'required|numeric',
+        'ongkir' => 'required|numeric|min:0',
     ]);
 
     $user = Auth::user(); // Ambil data pengguna yang sedang login
@@ -43,10 +46,12 @@ class CheckoutController extends Controller
         return redirect()->route('keranjang.show')->with('error', 'Keranjang Anda kosong!');
     }
 
-    // Hitung total harga
-    $totalHarga = $keranjangs->sum(function ($keranjang) {
+    // Hitung total harga produk + ongkir
+    $totalHargaProduk = $keranjangs->sum(function ($keranjang) {
         return $keranjang->jumlah * $keranjang->harga;
     });
+
+    $totalHarga = $totalHargaProduk + $request->ongkir;
 
     // Persiapkan detail produk dalam format JSON
     $produkDetails = $keranjangs->map(function ($item) {
@@ -62,6 +67,9 @@ class CheckoutController extends Controller
     $checkout = \App\Models\Checkout::create([
         'user_id' => $user->id,
         'alamat_pengiriman' => $request->alamat,
+        'latitude' => $request->latitude,
+        'longitude' => $request->longitude,
+        'ongkir' => $request->ongkir,
         'total_harga' => $totalHarga,
         'produk_details' => $produkDetails->toJson(),
         'status' => 'pesanan diterima',
@@ -71,7 +79,6 @@ class CheckoutController extends Controller
     foreach ($keranjangs as $keranjang) {
         $jumlahDibutuhkan = $keranjang->jumlah;
 
-        // Ambil batch stok berdasarkan produk dan urutan tanggal kadaluwarsa
         $batchStoks = BatchStok::where('produk_id', $keranjang->produk_id)
             ->orderBy('tgl_kadaluarsa', 'asc')
             ->get();
@@ -82,19 +89,16 @@ class CheckoutController extends Controller
             }
 
             if ($batchStok->jumlah >= $jumlahDibutuhkan) {
-                // Kurangi langsung dari batch stok saat ini
                 $batchStok->jumlah -= $jumlahDibutuhkan;
                 $batchStok->save();
                 $jumlahDibutuhkan = 0;
             } else {
-                // Habiskan jumlah batch stok dan lanjutkan ke batch berikutnya
                 $jumlahDibutuhkan -= $batchStok->jumlah;
                 $batchStok->jumlah = 0;
                 $batchStok->save();
             }
         }
 
-        // Update stok utama
         $stok = Stok::where('produk_id', $keranjang->produk_id)->first();
         if ($stok) {
             $stok->jumlah -= $keranjang->jumlah;
@@ -108,6 +112,7 @@ class CheckoutController extends Controller
     // Redirect ke halaman detail pesanan
     return redirect()->route('checkout.detail', $checkout->id);
 }
+
 
 
     /**
@@ -154,15 +159,64 @@ class CheckoutController extends Controller
     {
         //
     }
+
     public function detail($id)
-{
-    $checkout = \App\Models\Checkout::with('pengguna')->findOrFail($id);
+    {
+        // Mengambil data checkout beserta pengguna yang terkait
+        $checkout = \App\Models\Checkout::with('pengguna')->findOrFail($id);
 
-    // Mengambil data produk yang sudah di-JSON decode
-    $produkDetails = json_decode($checkout->produk_details);
+        // Mengambil data produk yang sudah di-JSON decode
+        $produkDetails = json_decode($checkout->produk_details);
 
-    return view('pelanggan.detailPesanan', compact('checkout', 'produkDetails'));
-}
+        // Mengambil ongkir yang sudah ada di database
+        $ongkir = $checkout->ongkir;
 
+        // Menghitung total harga produk sebelum ongkir
+        $totalBelanja = collect($produkDetails)->sum(function($produk) {
+            return $produk->harga * $produk->jumlah;
+        });
+
+        // Mengirimkan total belanja, ongkir, dan data lainnya ke view
+        return view('pelanggan.detailPesanan', compact('checkout', 'produkDetails', 'ongkir', 'totalBelanja'));
+    }
+
+// Fungsi untuk menghitung jarak antara dua titik (latitude, longitude)
+    private function calculateDistance($loc1, $loc2)
+    {
+        $earthRadius = 6371; // radius bumi dalam km
+
+        $latFrom = deg2rad($loc1[0]);
+        $lonFrom = deg2rad($loc1[1]);
+        $latTo = deg2rad($loc2[0]);
+        $lonTo = deg2rad($loc2[1]);
+
+        $latDiff = $latTo - $latFrom;
+        $lonDiff = $lonTo - $lonFrom;
+
+        $a = sin($latDiff / 2) * sin($latDiff / 2) +
+            cos($latFrom) * cos($latTo) *
+            sin($lonDiff / 2) * sin($lonDiff / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        $distance = $earthRadius * $c; // dalam kilometer
+        return $distance;
+    }
+
+    // Fungsi untuk menghitung ongkir berdasarkan jarak
+    private function calculateOngkir($distance)
+    {
+        // Tentukan tarif ongkir per km
+        $ratePerKm = 1000; // Rp 1000 per km
+
+        // Membulatkan ongkir
+        if ($distance < 0.5) {
+            $ongkir = ceil($distance * $ratePerKm / 500) * 500;
+        } else {
+            $ongkir = ceil($distance * $ratePerKm / 1000) * 1000;
+        }
+
+        return $ongkir;
+    }
 
 }

@@ -23,6 +23,34 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .btn-logout {
+            background-color: #0e6336; /* Warna tombol */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px; /* Bentuk tombol bulat */
+            transition: all 0.3s ease-in-out; /* Efek transisi saat hover */
+        }
+
+        .btn-logout:hover {
+            background-color: #042c17; /* Warna saat hover */
+            color: #fff;
+            transform: scale(1.1); /* Efek zoom saat hover */
+        }
+
+        .btn-logout:focus {
+            outline: none; /* Menghapus outline saat tombol di-klik */
+        }
+
+        .btn-logout i {
+            margin-right: 8px; /* Spasi antara ikon dan teks */
+        }
+    </style>
 </head>
 <body class="d-flex flex-column h-100">
     @include('layouts.header')

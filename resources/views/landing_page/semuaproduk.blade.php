@@ -73,16 +73,21 @@
                             @csrf
                             <input type="hidden" name="produk_id" value="{{ $produk->id }}">
                             <input type="hidden" name="jumlah" value="1" class="jumlah-input" id="jumlah-{{ $produk->id }}">
-                            <button type="submit" class="nav-link text-green"
+                            <button type="submit" class="nav-link text-green fs-6"
                                 @if(!Auth::check() || (isset($produk->stok) && $produk->stok->jumlah == 0))
                                     data-bs-toggle="modal" data-bs-target="#loginModal"
                                 @endif
                                 @if(isset($produk->stok) && $produk->stok->jumlah == 0)
                                     style="pointer-events: none; color: grey;"
-                                @endif>
+                                @else
+                                    style="color: #07582d;"
+                                @endif
+                            >
                                 <span class="small-text">+Keranjang</span>
                             </button>
+
                         </form>
+
                     </div>
                 </div>
             </div>

@@ -65,7 +65,7 @@
                                     </div>
                                     <ul id="searchResults" class="list-group mt-1" style="display: none; max-height: 200px; overflow-y: auto;"></ul>
                                 </div>
-                                
+
                                 <div class="mb-3">
                                     <input type="hidden" id="latitude" name="latitude" value="{{ old('latitude') }}">
                                     <input type="hidden" id="longitude" name="longitude" value="{{ old('longitude') }}">
@@ -78,6 +78,10 @@
                                 <div class="form-group">
                                     <h6>Ongkir: <span id="ongkir" style="color: #0B773D;">Rp 0</span></h6>
                                     <input type="hidden" id="ongkirInput" name="ongkir" value="0">
+                                </div>
+                                <div class="form-group">
+                                    <h6>Diskon: <span id="diskon" style="color: #D32F2F;">Rp 0</span></h6>
+                                    <input type="hidden" id="diskonInput" name="diskon" value="0">
                                 </div>
                                 <div class="form-group">
                                     <h6>Total Harga: <span id="totalHarga" style="color: #0B773D;">Rp {{ $totalHarga }}</span></h6>
@@ -174,32 +178,44 @@
 
                             // Fungsi untuk menghitung ongkir
                             document.getElementById('calculateDistance').addEventListener('click', function () {
-                                const lat = parseFloat(document.getElementById('latitude').value);
-                                const lon = parseFloat(document.getElementById('longitude').value);
+    const lat = parseFloat(document.getElementById('latitude').value);
+    const lon = parseFloat(document.getElementById('longitude').value);
 
-                                if (!lat || !lon) {
-                                    alert('Silakan pilih lokasi terlebih dahulu.');
-                                    return;
-                                }
+    if (!lat || !lon) {
+        alert('Silakan pilih lokasi terlebih dahulu.');
+        return;
+    }
 
-                                const distance = map.distance(tokoLocation, [lat, lon]) / 1000; // Jarak dalam km
-                                let ongkir = Math.ceil(distance * 1000); // Ongkir sebelum pembulatan
+    const distance = map.distance(tokoLocation, [lat, lon]) / 1000; // Jarak dalam km
+    let ongkir = Math.ceil(distance * 1000); // Ongkir sebelum pembulatan
 
-                                // Logika untuk membulatkan ongkir
-                                if (distance < 0.5) {
-                                    ongkir = Math.round(ongkir / 500) * 500; // Pembulatan ke kelipatan 500 jika jarak < 0.5 km
-                                } else {
-                                    ongkir = Math.round(ongkir / 1000) * 1000; // Pembulatan ke kelipatan 1000 jika jarak >= 0.5 km
-                                }
+    // Logika untuk membulatkan ongkir
+    if (distance < 0.5) {
+        ongkir = Math.round(ongkir / 500) * 500; // Pembulatan ke kelipatan 500 jika jarak < 0.5 km
+    } else {
+        ongkir = Math.round(ongkir / 1000) * 1000; // Pembulatan ke kelipatan 1000 jika jarak >= 0.5 km
+    }
 
-                                const totalHargaDenganOngkir = {{ $totalHarga }} + ongkir; // Menambahkan ongkir ke total harga
+    const totalHargaTanpaOngkir = {{ $totalHarga }}; // Total harga sebelum ongkir
+    const totalHargaDenganOngkir = totalHargaTanpaOngkir + ongkir; // Menambahkan ongkir ke total harga
 
-                                // Update ongkir dan total harga
-                                document.getElementById('ongkir').innerText = `Rp ${ongkir.toLocaleString()}`;
-                                document.getElementById('ongkirInput').value = ongkir;
-                                document.getElementById('totalHarga').innerText = `Rp ${totalHargaDenganOngkir.toLocaleString()}`;
-                                document.getElementById('totalHargaInput').value = totalHargaDenganOngkir;
-                            });
+    // Update ongkir
+    document.getElementById('ongkir').innerText = `Rp ${ongkir.toLocaleString()}`;
+    document.getElementById('ongkirInput').value = ongkir;
+
+    // Diskon 10% pada total harga setelah ongkir
+    const diskon = totalHargaDenganOngkir * 0.10; // Misalnya diskon 10%
+    const totalHargaSetelahDiskon = totalHargaDenganOngkir - diskon; // Total harga setelah diskon
+
+    // Menampilkan diskon
+    document.getElementById('diskon').innerText = `Diskon: Rp ${diskon.toLocaleString()}`;
+    document.getElementById('diskonInput').value = diskon;
+
+    // Update total harga yang sudah termasuk diskon dan ongkir
+    document.getElementById('totalHarga').innerText = `Rp ${totalHargaSetelahDiskon.toLocaleString()}`;
+    document.getElementById('totalHargaInput').value = totalHargaSetelahDiskon;
+});
+
 
 
                         </script>

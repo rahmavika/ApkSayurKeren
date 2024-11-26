@@ -11,6 +11,7 @@ use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\KeranjangController;
 use App\Http\Controllers\PengelolaController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\PromoController;
 use App\Http\Controllers\RiwayatBelanjaController;
 use App\Http\Controllers\StokController;
 use App\Models\Produk;
@@ -104,7 +105,22 @@ Route::post('/upload-bukti/{id}', [RiwayatBelanjaController::class, 'uploadBukti
 Route::get('/admin-pelanggan', [PenggunaController::class, 'index'])->name('admin.admin-pelanggan.index');
 Route::delete('/admin-pelanggan/{id}', [PenggunaController::class, 'destroy'])->name('admin.admin-pelanggan.destroy');
 
+Route::resource('/admin-promo', PromoController::class);
+
 Route::resource('/admin-pengelola', PengelolaController::class);
+
+// ini route yang ika tambha
+Route::get('/pesanan', function () {
+    return view('pengelola.pesanan');
+});
+
+Route::get('/pesanan', [CheckoutController::class, 'index'])->name('checkouts.index');
+Route::get('/pesanan/{id}', [CheckoutController::class, 'show'])->name('checkouts.show');
+Route::post('/pesanan/{id}/confirm', [CheckoutController::class, 'confirm'])->name('checkouts.confirm');
+
+Route::get('/pesanan', [CheckoutController::class, 'showPesanan']);
+// Route::put('/pesanan/{id}/update-status', [CheckoutController::class, 'updateStatus'])->name('checkouts.updateStatus');
+Route::put('/checkouts/{id}/update-status', [CheckoutController::class, 'updateStatus'])->name('checkouts.updateStatus');
 
 
 

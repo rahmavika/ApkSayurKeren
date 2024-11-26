@@ -50,6 +50,12 @@
                         Pembelian
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center gap-2 {{ request()->is('admin-promo') ? 'active' : '' }}" href="admin-promo">
+                        <i class="bi bi-percent"></i>
+                        Promo
+                    </a>
+                </li>
             </ul>
             <hr class="my-2 text-black">
             <ul class="nav flex-column">

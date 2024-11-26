@@ -40,6 +40,8 @@ class LoginController extends Controller
                 return redirect()->intended('/detailpelanggan');
             } elseif ($user->role === 'admin') {
                 return redirect()->intended('/dashboard');
+            } elseif ($user->role === 'pengelola') {
+                return redirect()->intended('/pesanan');
             }
         }
 

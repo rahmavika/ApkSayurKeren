@@ -77,6 +77,18 @@
                             <h6 class="font-weight-bold">Ongkir: <span>Rp {{ number_format($ongkir, 0, ',', '.') }}</span></h6>
                         </div>
 
+                        <!-- Diskon -->
+                        @if($diskonAmount > 0)
+                        <div class="mb-4 text-left">
+                            <h6 class="font-weight-bold">Diskon: <span style="color: #D32F2F;">Rp {{ number_format($diskonAmount, 0, ',', '.') }}</span></h6>
+                        </div>
+                    @else
+                        <div class="mb-4 text-left">
+                            <h6 class="font-weight-bold">Diskon: <span style="color: #D32F2F;">Rp 0</span></h6>
+                        </div>
+                    @endif
+
+
                         <hr style="border-top: 2px solid #0B773D; margin-bottom: 20px;">
 
                         <!-- Total Pembayaran -->

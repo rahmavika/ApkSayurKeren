@@ -70,7 +70,7 @@
                                                     Lihat Bukti
                                                 </button>
                                             @else
-                                                <button class="btn" style="background-color: #0b773d; color: white;"
+                                                <button class="btn" style="background-color: #db9a44; color: white;"
                                                     title="Upload Bukti Transfer"
                                                     onclick="document.getElementById('fileInput{{ $checkout->id }}').click()">
                                                     Upload Bukti
@@ -142,4 +142,8 @@
 }
 
 </script>
+
+<div class="d-flex justify-content-center">
+    {{ $riwayatBelanja->links() }}
+</div>
 @endsection

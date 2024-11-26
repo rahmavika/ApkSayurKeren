@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\BatchStok;
+use App\Models\Checkout;
 use App\Models\Keranjang;
+use App\Models\Promo;
 use App\Models\Stok;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +18,43 @@ class CheckoutController extends Controller
      */
     public function index()
     {
-        //
+        $checkouts = Checkout::paginate(10); // Gunakan paginate untuk hasil paginasi
+        return view('pengelola.pesanan', compact('checkouts'));
+    }
+    public function showPesanan()
+    {
+        $checkouts = Checkout::paginate(10); // Gunakan paginate untuk mendukung pagination
+
+        return view('pengelola.pesanan', compact('checkouts')); // Kirim data ke view
+    }
+
+
+    // Konfirmasi pesanan
+    public function confirm(Request $request, $id)
+    {
+        $checkout = Checkout::findOrFail($id);
+        $checkout->status = 'diproses'; // Update status ke 'diproses'
+        $checkout->catatan_admin = $request->input('catatan_admin'); // Opsional
+        $checkout->save();
+
+        return redirect()->route('pengelola.pesanan')->with('success', 'Pesanan berhasil dikonfirmasi.');
+    }
+    public function updateStatus(Request $request, $id)
+    {
+        // Validasi input
+        $request->validate([
+            'status' => 'required|string'
+        ]);
+
+        // Cari pesanan berdasarkan ID
+        $checkout = Checkout::findOrFail($id);
+
+        // Perbarui status pesanan
+        $checkout->status = $request->status;
+        $checkout->save(); // Simpan perubahan ke database
+
+        // Redirect dengan pesan sukses
+        return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
     }
 
     /**
@@ -30,93 +69,102 @@ class CheckoutController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-{
-    // Validasi input termasuk lat, long, dan ongkir
-    $request->validate([
-        'alamat' => 'required|string|max:255',
-        'latitude' => 'required|numeric',
-        'longitude' => 'required|numeric',
-        'ongkir' => 'required|numeric|min:0',
-    ]);
+    {
+        // Validasi input
+        $request->validate([
+            'alamat' => 'required|string|max:255',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'ongkir' => 'required|numeric|min:0',
+        ]);
 
-    $user = Auth::user(); // Ambil data pengguna yang sedang login
-    $keranjangs = Keranjang::where('pengguna_id', $user->id)->get();
+        $user = Auth::user(); // Ambil data pengguna yang sedang login
+        $keranjangs = Keranjang::where('pengguna_id', $user->id)->get();
 
-    if ($keranjangs->isEmpty()) {
-        return redirect()->route('keranjang.show')->with('error', 'Keranjang Anda kosong!');
-    }
+        if ($keranjangs->isEmpty()) {
+            return redirect()->route('keranjang.show')->with('error', 'Keranjang Anda kosong!');
+        }
 
-    // Hitung total harga produk + ongkir
-    $totalHargaProduk = $keranjangs->sum(function ($keranjang) {
-        return $keranjang->jumlah * $keranjang->harga;
-    });
+        // Hitung total harga produk
+        $totalHargaProduk = $keranjangs->sum(function ($keranjang) {
+            return $keranjang->jumlah * $keranjang->harga;
+        });
 
-    $totalHarga = $totalHargaProduk + $request->ongkir;
+        // Ambil promo aktif menggunakan scope
+        $promo = Promo::where('tanggal_mulai', '<=', Carbon::now())
+                      ->where('tanggal_berakhir', '>=', Carbon::now())
+                      ->first();
 
-    // Persiapkan detail produk dalam format JSON
-    $produkDetails = $keranjangs->map(function ($item) {
-        return [
-            'nama' => $item->produk->nama,
-            'jumlah' => $item->jumlah,
-            'harga' => $item->harga,
-            'total' => $item->jumlah * $item->harga,
-        ];
-    });
+        $diskon = 0;
+        if ($promo) {
+            $diskon = $promo->persentase_diskon / 100;
+            $totalHargaProduk = $totalHargaProduk - ($totalHargaProduk * $diskon);
+        }
 
-    // Simpan ke tabel checkouts
-    $checkout = \App\Models\Checkout::create([
-        'user_id' => $user->id,
-        'alamat_pengiriman' => $request->alamat,
-        'latitude' => $request->latitude,
-        'longitude' => $request->longitude,
-        'ongkir' => $request->ongkir,
-        'total_harga' => $totalHarga,
-        'produk_details' => $produkDetails->toJson(),
-        'status' => 'pesanan diterima',
-    ]);
+        $totalHarga = $totalHargaProduk + $request->ongkir;
 
-    // Proses pengurangan stok
-    foreach ($keranjangs as $keranjang) {
-        $jumlahDibutuhkan = $keranjang->jumlah;
+        // Persiapkan detail produk dalam format JSON
+        $produkDetails = $keranjangs->map(function ($item) {
+            return [
+                'nama' => $item->produk->nama,
+                'jumlah' => $item->jumlah,
+                'harga' => $item->harga,
+                'total' => $item->jumlah * $item->harga,
+            ];
+        });
 
-        $batchStoks = BatchStok::where('produk_id', $keranjang->produk_id)
-            ->orderBy('tgl_kadaluarsa', 'asc')
-            ->get();
+        // Simpan ke tabel checkouts
+        $checkout = \App\Models\Checkout::create([
+            'user_id' => $user->id,
+            'alamat_pengiriman' => $request->alamat,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'ongkir' => $request->ongkir,
+            'total_harga' => $totalHarga,
+            'produk_details' => $produkDetails->toJson(),
+            'status' => 'pesanan diterima',
+        ]);
 
-        foreach ($batchStoks as $batchStok) {
-            if ($jumlahDibutuhkan <= 0) {
-                break;
+        // Proses pengurangan stok
+        foreach ($keranjangs as $keranjang) {
+            $jumlahDibutuhkan = $keranjang->jumlah;
+
+            $batchStoks = BatchStok::where('produk_id', $keranjang->produk_id)
+                ->orderBy('tgl_kadaluarsa', 'asc')
+                ->get();
+
+            foreach ($batchStoks as $batchStok) {
+                if ($jumlahDibutuhkan <= 0) {
+                    break;
+                }
+
+                if ($batchStok->jumlah >= $jumlahDibutuhkan) {
+                    $batchStok->jumlah -= $jumlahDibutuhkan;
+                    $batchStok->save();
+                    $jumlahDibutuhkan = 0;
+                } else {
+                    $jumlahDibutuhkan -= $batchStok->jumlah;
+                    $batchStok->jumlah = 0;
+                    $batchStok->save();
+                }
             }
 
-            if ($batchStok->jumlah >= $jumlahDibutuhkan) {
-                $batchStok->jumlah -= $jumlahDibutuhkan;
-                $batchStok->save();
-                $jumlahDibutuhkan = 0;
-            } else {
-                $jumlahDibutuhkan -= $batchStok->jumlah;
-                $batchStok->jumlah = 0;
-                $batchStok->save();
+            $stok = Stok::where('produk_id', $keranjang->produk_id)->first();
+            if ($stok) {
+                $stok->jumlah -= $keranjang->jumlah;
+                $stok->save();
             }
         }
 
-        $stok = Stok::where('produk_id', $keranjang->produk_id)->first();
-        if ($stok) {
-            $stok->jumlah -= $keranjang->jumlah;
-            $stok->save();
-        }
+        // Hapus keranjang pengguna
+        Keranjang::where('pengguna_id', $user->id)->delete();
+
+        // Redirect ke halaman detail pesanan
+        return redirect()->route('checkout.detail', $checkout->id);
     }
-
-    // Hapus data dari tabel keranjangs
-    Keranjang::where('pengguna_id', $user->id)->delete();
-
-    // Redirect ke halaman detail pesanan
-    return redirect()->route('checkout.detail', $checkout->id);
-}
-
-
 
     /**
-     * Display the specified resource.
+     * Show the form for editing the specified resource.
      */
     public function show()
     {
@@ -127,14 +175,27 @@ class CheckoutController extends Controller
         $keranjangs = Keranjang::where('pengguna_id', $user->id)->get();
 
         // Menghitung total harga dari semua produk yang ada di keranjang
-        $totalHarga = $keranjangs->sum(function($keranjang) {
+        $totalHargaProduk = $keranjangs->sum(function($keranjang) {
             return $keranjang->jumlah * $keranjang->harga;
         });
 
-        // Mengirimkan data ke view
+        // Ambil promo aktif menggunakan scope
+        $promo = Promo::where('tanggal_mulai', '<=', Carbon::now())
+                      ->where('tanggal_berakhir', '>=', Carbon::now())
+                      ->first();
+
+        $diskon = 0;
+        if ($promo) {
+            $diskon = $promo->persentase_diskon / 100;
+            $totalHargaProduk = $totalHargaProduk - ($totalHargaProduk * $diskon);
+        }
+
+        // Hitung total harga setelah diskon dan ongkir
+        $totalHarga = $totalHargaProduk;
+
+        // Kirim data ke view
         return view('pelanggan.checkout', compact('user', 'keranjangs', 'totalHarga'));
     }
-
 
     /**
      * Show the form for editing the specified resource.
@@ -161,24 +222,43 @@ class CheckoutController extends Controller
     }
 
     public function detail($id)
-    {
-        // Mengambil data checkout beserta pengguna yang terkait
-        $checkout = \App\Models\Checkout::with('pengguna')->findOrFail($id);
+{
+    // Mengambil data checkout beserta pengguna yang terkait
+    $checkout = \App\Models\Checkout::with('pengguna')->findOrFail($id);
 
-        // Mengambil data produk yang sudah di-JSON decode
-        $produkDetails = json_decode($checkout->produk_details);
+    // Mengambil data produk yang sudah di-JSON decode
+    $produkDetails = json_decode($checkout->produk_details);
 
-        // Mengambil ongkir yang sudah ada di database
-        $ongkir = $checkout->ongkir;
+    // Mengambil ongkir yang sudah ada di database
+    $ongkir = $checkout->ongkir;
 
-        // Menghitung total harga produk sebelum ongkir
-        $totalBelanja = collect($produkDetails)->sum(function($produk) {
-            return $produk->harga * $produk->jumlah;
-        });
+    // Menghitung total harga produk sebelum ongkir
+    $totalBelanja = collect($produkDetails)->sum(function($produk) {
+        return $produk->harga * $produk->jumlah;
+    });
 
-        // Mengirimkan total belanja, ongkir, dan data lainnya ke view
-        return view('pelanggan.detailPesanan', compact('checkout', 'produkDetails', 'ongkir', 'totalBelanja'));
+    // Ambil promo aktif menggunakan scope
+    $promo = Promo::where('tanggal_mulai', '<=', Carbon::now())
+                  ->where('tanggal_berakhir', '>=', Carbon::now())
+                  ->first();
+
+    // Inisialisasi diskon dan diskonAmount
+    $diskon = 0;
+    $diskonAmount = 0;
+
+    // Hitung diskon jika ada promo
+    if ($promo) {
+        $diskon = $promo->persentase_diskon / 100;
+        $diskonAmount = $totalBelanja * $diskon; // Hitung nilai diskon dalam rupiah
+        $totalBelanja -= $diskonAmount; // Kurangi total belanja dengan diskon
     }
+
+    // Kirimkan data ke view termasuk diskon
+    return view('pelanggan.detailPesanan', compact('checkout', 'produkDetails', 'ongkir', 'totalBelanja', 'diskon', 'diskonAmount'));
+}
+
+
+
 
 // Fungsi untuk menghitung jarak antara dua titik (latitude, longitude)
     private function calculateDistance($loc1, $loc2)

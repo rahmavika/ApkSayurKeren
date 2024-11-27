@@ -21,13 +21,12 @@ class CheckoutController extends Controller
         $checkouts = Checkout::paginate(10); // Gunakan paginate untuk hasil paginasi
         return view('pengelola.pesanan', compact('checkouts'));
     }
+
     public function showPesanan()
     {
         $checkouts = Checkout::paginate(10); // Gunakan paginate untuk mendukung pagination
-
         return view('pengelola.pesanan', compact('checkouts')); // Kirim data ke view
     }
-
 
     // Konfirmasi pesanan
     public function confirm(Request $request, $id)
@@ -39,6 +38,7 @@ class CheckoutController extends Controller
 
         return redirect()->route('pengelola.pesanan')->with('success', 'Pesanan berhasil dikonfirmasi.');
     }
+
     public function updateStatus(Request $request, $id)
     {
         // Validasi input
@@ -55,14 +55,6 @@ class CheckoutController extends Controller
 
         // Redirect dengan pesan sukses
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -95,10 +87,11 @@ class CheckoutController extends Controller
                       ->where('tanggal_berakhir', '>=', Carbon::now())
                       ->first();
 
-        $diskon = 0;
+        $diskonAmount = 0; // Jumlah diskon yang dihitung
         if ($promo) {
             $diskon = $promo->persentase_diskon / 100;
-            $totalHargaProduk = $totalHargaProduk - ($totalHargaProduk * $diskon);
+            $diskonAmount = $totalHargaProduk * $diskon;
+            $totalHargaProduk -= $diskonAmount;
         }
 
         $totalHarga = $totalHargaProduk + $request->ongkir;
@@ -114,13 +107,14 @@ class CheckoutController extends Controller
         });
 
         // Simpan ke tabel checkouts
-        $checkout = \App\Models\Checkout::create([
+        $checkout = Checkout::create([
             'user_id' => $user->id,
             'alamat_pengiriman' => $request->alamat,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'ongkir' => $request->ongkir,
-            'total_harga' => $totalHarga,
+            'diskon' => $diskonAmount, // Simpan nilai diskon ke database
+            'total_harga' => $totalHarga, // Total harga sudah termasuk diskon dan ongkir
             'produk_details' => $produkDetails->toJson(),
             'status' => 'pesanan diterima',
         ]);
@@ -222,45 +216,35 @@ class CheckoutController extends Controller
     }
 
     public function detail($id)
-{
-    // Mengambil data checkout beserta pengguna yang terkait
-    $checkout = \App\Models\Checkout::with('pengguna')->findOrFail($id);
+    {
+        // Ambil data checkout dengan relasi pengguna
+        $checkout = Checkout::with('pengguna')->findOrFail($id);
 
-    // Mengambil data produk yang sudah di-JSON decode
-    $produkDetails = json_decode($checkout->produk_details);
+        // Decode produk details dari JSON
+        $produkDetails = json_decode($checkout->produk_details);
 
-    // Mengambil ongkir yang sudah ada di database
-    $ongkir = $checkout->ongkir;
+        // Data langsung diambil dari tabel `checkouts`
+        $ongkir = $checkout->ongkir;
+        $totalHargaAkhir = $checkout->total_harga; // Total harga sudah termasuk diskon dan ongkir
+        $diskonAmount = $checkout->diskon; // Ambil nilai diskon dari database
 
-    // Menghitung total harga produk sebelum ongkir
-    $totalBelanja = collect($produkDetails)->sum(function($produk) {
-        return $produk->harga * $produk->jumlah;
-    });
+        // Hitung total belanja produk (tanpa diskon, hanya sebagai informasi tambahan jika diperlukan)
+        $totalBelanja = collect($produkDetails)->sum(function ($produk) {
+            return $produk->harga * $produk->jumlah;
+        });
 
-    // Ambil promo aktif menggunakan scope
-    $promo = Promo::where('tanggal_mulai', '<=', Carbon::now())
-                  ->where('tanggal_berakhir', '>=', Carbon::now())
-                  ->first();
-
-    // Inisialisasi diskon dan diskonAmount
-    $diskon = 0;
-    $diskonAmount = 0;
-
-    // Hitung diskon jika ada promo
-    if ($promo) {
-        $diskon = $promo->persentase_diskon / 100;
-        $diskonAmount = $totalBelanja * $diskon; // Hitung nilai diskon dalam rupiah
-        $totalBelanja -= $diskonAmount; // Kurangi total belanja dengan diskon
+        // Render ke view dengan data lengkap
+        return view('pelanggan.detailPesanan', compact(
+            'checkout',
+            'produkDetails',
+            'ongkir',
+            'totalBelanja',
+            'diskonAmount',
+            'totalHargaAkhir'
+        ));
     }
 
-    // Kirimkan data ke view termasuk diskon
-    return view('pelanggan.detailPesanan', compact('checkout', 'produkDetails', 'ongkir', 'totalBelanja', 'diskon', 'diskonAmount'));
-}
-
-
-
-
-// Fungsi untuk menghitung jarak antara dua titik (latitude, longitude)
+    // Fungsi untuk menghitung jarak antara dua titik (latitude, longitude)
     private function calculateDistance($loc1, $loc2)
     {
         $earthRadius = 6371; // radius bumi dalam km
@@ -298,5 +282,4 @@ class CheckoutController extends Controller
 
         return $ongkir;
     }
-
 }

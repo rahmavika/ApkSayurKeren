@@ -20,6 +20,7 @@ class Checkout extends Model
         'longitude',
         'total_harga',
         'ongkir',
+        'diskon',
         'produk_details',
         'tanggal_pemesanan',
         'status',

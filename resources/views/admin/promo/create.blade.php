@@ -50,7 +50,7 @@
                 <!-- Tanggal Mulai -->
                 <div class="mb-3">
                     <label for="tanggal_mulai" class="form-label">Tanggal Mulai</label>
-                    <input type="date" class="form-control @error('tanggal_mulai') is-invalid @enderror"
+                    <input type="datetime-local" class="form-control @error('tanggal_mulai') is-invalid @enderror"
                     name="tanggal_mulai" id="tanggal_mulai" value="{{ old('tanggal_mulai') }}">
                     @error('tanggal_mulai')
                         <div class="invalid-feedback">

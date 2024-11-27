@@ -56,9 +56,8 @@
                     <!-- Tanggal Mulai -->
                     <div class="mb-3">
                         <label for="tanggal_mulai" class="form-label">Tanggal Mulai</label>
-                        <input type="date" class="form-control @error('tanggal_mulai') is-invalid @enderror"
-                            name="tanggal_mulai" id="tanggal_mulai"
-                            value="{{ old('tanggal_mulai', $promo->tanggal_mulai) }}">
+                        <input type="datetime-local" class="form-control @error('tanggal_mulai') is-invalid @enderror"
+                        name="tanggal_mulai" id="tanggal_mulai" value="{{ old('tanggal_mulai') }}">
                         @error('tanggal_mulai')
                             <div class="invalid-feedback">
                                 {{ $message }}
@@ -69,9 +68,8 @@
                     <!-- Tanggal Berakhir -->
                     <div class="mb-3">
                         <label for="tanggal_berakhir" class="form-label">Tanggal Berakhir</label>
-                        <input type="date" class="form-control @error('tanggal_berakhir') is-invalid @enderror"
-                            name="tanggal_berakhir" id="tanggal_berakhir"
-                            value="{{ old('tanggal_berakhir', $promo->tanggal_berakhir) }}">
+                        <input type="datetime-local" class="form-control @error('tanggal_berakhir') is-invalid @enderror"
+                        name="tanggal_berakhir" id="tanggal_berakhir" value="{{ old('tanggal_berakhir') }}">
                         @error('tanggal_berakhir')
                             <div class="invalid-feedback">
                                 {{ $message }}

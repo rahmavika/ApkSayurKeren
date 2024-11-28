@@ -62,17 +62,19 @@ class CheckoutController extends Controller
      */
     public function store(Request $request)
 {
+    // Validasi input
     $request->validate([
         'alamat' => 'required|string|max:255',
         'latitude' => 'required|numeric',
         'longitude' => 'required|numeric',
         'ongkir' => 'required|numeric|min:0',
-        'diskon' => 'required|numeric|min:0',
+        'diskon' => 'nullable|numeric|min:0',
     ]);
 
     $user = Auth::user();
     $keranjangs = Keranjang::where('pengguna_id', $user->id)->get();
 
+    // Cek apakah keranjang kosong
     if ($keranjangs->isEmpty()) {
         return redirect()->route('keranjang.show')->with('error', 'Keranjang Anda kosong!');
     }
@@ -83,30 +85,21 @@ class CheckoutController extends Controller
     });
 
     // Ambil promo aktif
-    $promo = Promo::where('tanggal_mulai', '<=', Carbon::now('Asia/Jakarta'))
-              ->where('tanggal_berakhir', '>=', Carbon::now('Asia/Jakarta'))
-              ->first();
+    $promo = Promo::where('tanggal_mulai', '<=', Carbon::now('Asia/Jakarta')->toDateTimeString())
+                  ->where('tanggal_berakhir', '>=', Carbon::now('Asia/Jakarta')->toDateTimeString())
+                  ->first();
 
-
-    $diskonAmount = 0; // Default nilai diskon
+    // Hitung diskon
+    $diskonAmount = 0;
     if ($promo) {
-        $diskon = $promo->persentase_diskon / 100;
-        $diskonAmount = $totalHargaProduk * $diskon;
+        $diskonPersentase = $promo->diskon / 100; // Hitung persentase diskon
+        $diskonAmount = $totalHargaProduk * $diskonPersentase; // Hitung diskon berdasarkan promo
     }
 
-    // Tambahkan diskon dari request jika ada
-    $diskonFromRequest = $request->diskon;
-    if ($diskonFromRequest > 0) {
-        $diskonAmount = $diskonFromRequest;
-    }
+    // Total harga akhir: Total Harga Produk + Ongkir - Diskon
+    $totalHarga = $totalHargaProduk + $request->ongkir - $diskonAmount;
 
-    // Kurangi total harga dengan diskon
-    $totalHargaProduk -= $diskonAmount;
-
-    // Total harga akhir
-    $totalHarga = $totalHargaProduk + $request->ongkir;
-
-    // Persiapkan detail produk
+    // Persiapkan detail produk untuk disimpan
     $produkDetails = $keranjangs->map(function ($item) {
         return [
             'nama' => $item->produk->nama,
@@ -129,7 +122,7 @@ class CheckoutController extends Controller
         'status' => 'pesanan diterima',
     ]);
 
-    // Kurangi stok
+    // Kurangi stok produk berdasarkan jumlah yang dipesan
     foreach ($keranjangs as $keranjang) {
         $jumlahDibutuhkan = $keranjang->jumlah;
 
@@ -160,47 +153,57 @@ class CheckoutController extends Controller
         }
     }
 
-    // Hapus keranjang
+    // Hapus keranjang setelah checkout
     Keranjang::where('pengguna_id', $user->id)->delete();
 
+    // Redirect ke halaman detail checkout
     return redirect()->route('checkout.detail', $checkout->id);
 }
+
+
 
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function show()
-    {
-        // Mengambil data pengguna yang sedang login
-        $user = Auth::user(); // Menggunakan Auth untuk mengambil data pengguna yang sedang login
+    /**
+ * Show the form for editing the specified resource.
+ */
+public function show()
+{
+    $user = Auth::user();
+    $keranjangs = Keranjang::where('pengguna_id', $user->id)->get();
 
-        // Mengambil produk yang ada di keranjang milik pengguna
-        $keranjangs = Keranjang::where('pengguna_id', $user->id)->get();
+    // Hitung total harga produk
+    $totalHargaProduk = $keranjangs->sum(function ($keranjang) {
+        return $keranjang->jumlah * $keranjang->harga;
+    });
 
-        // Menghitung total harga dari semua produk yang ada di keranjang
-        $totalHargaProduk = $keranjangs->sum(function($keranjang) {
-            return $keranjang->jumlah * $keranjang->harga;
-        });
+    // Ambil promo aktif
+    $promo = Promo::where('tanggal_mulai', '<=', Carbon::now('Asia/Jakarta')->toDateTimeString())
+                  ->where('tanggal_berakhir', '>=', Carbon::now('Asia/Jakarta')->toDateTimeString())
+                  ->first();
 
-        // Ambil promo aktif menggunakan scope
-        $promo = Promo::where('tanggal_mulai', '<=', Carbon::now('Asia/Jakarta'))
-              ->where('tanggal_berakhir', '>=', Carbon::now('Asia/Jakarta'))
-              ->first();
-
-
-        $diskon = 0;
-        if ($promo) {
-            $diskon = $promo->persentase_diskon / 100;
-            $totalHargaProduk = $totalHargaProduk - ($totalHargaProduk * $diskon);
-        }
-
-        // Hitung total harga setelah diskon dan ongkir
-        $totalHarga = $totalHargaProduk;
-
-        // Kirim data ke view
-        return view('pelanggan.checkout', compact('user', 'keranjangs', 'totalHarga'));
+    // Hitung diskon
+    $diskonAmount = 0;
+    if ($promo) {
+        $diskonPersentase = $promo->diskon / 100; // Hitung persentase diskon
+        $diskonAmount = $totalHargaProduk * $diskonPersentase; // Hitung diskon berdasarkan promo
     }
+
+    // Total harga setelah diskon
+    $totalHarga = $totalHargaProduk - $diskonAmount;
+
+    // Ongkir (dapat diambil dari request atau diatur di sini)
+    $ongkir = 0; // Ganti dengan nilai ongkir yang sesuai jika diperlukan
+
+    // Total pembayaran
+    $totalPembayaran = $totalHarga + $ongkir;
+
+    return view('pelanggan.checkout', compact('user', 'keranjangs', 'totalHargaProduk', 'ongkir', 'diskonAmount', 'totalPembayaran', 'promo'));
+}
+
+
 
     /**
      * Show the form for editing the specified resource.
@@ -226,20 +229,42 @@ class CheckoutController extends Controller
         //
     }
 
-    public function detail($id)
-    {
-        $checkout = Checkout::with('pengguna')->findOrFail($id);
-        $produkDetails = json_decode($checkout->produk_details);
+   public function detail($id)
+{
+    $checkout = Checkout::with('pengguna')->findOrFail($id);
+    $produkDetails = json_decode($checkout->produk_details);
 
-        return view('pelanggan.detailPesanan', [
-            'checkout' => $checkout,
-            'produkDetails' => $produkDetails,
-            'ongkir' => $checkout->ongkir,
-            'totalBelanja' => collect($produkDetails)->sum(fn($p) => $p->total),
-            'diskonAmount' => $checkout->diskon,
-            'totalHargaAkhir' => $checkout->total_harga,
-        ]);
+    // Hitung total belanja dari produk
+    $totalBelanja = collect($produkDetails)->sum(function($p) {
+        return $p->total;
+    });
+
+    // Ambil promo aktif
+    $promo = Promo::where('tanggal_mulai', '<=', Carbon::now('Asia/Jakarta')->toDateTimeString())
+                  ->where('tanggal_berakhir', '>=', Carbon::now('Asia/Jakarta')->toDateTimeString())
+                  ->first();
+
+    // Hitung diskon
+    $diskonAmount = 0;
+    if ($promo) {
+        $diskonPersentase = $promo->diskon / 100;
+        $diskonAmount = $totalBelanja * $diskonPersentase;
     }
+
+    // Hitung total harga akhir: Total Belanja + Ongkir - Diskon
+    $totalHargaAkhir = $totalBelanja + $checkout->ongkir - $diskonAmount;
+
+    return view('pelanggan.detailPesanan', [
+        'checkout' => $checkout,
+        'produkDetails' => $produkDetails,
+        'ongkir' => $checkout->ongkir,
+        'totalBelanja' => $totalBelanja,
+        'diskonAmount' => $diskonAmount,
+        'totalHargaAkhir' => $totalHargaAkhir,
+    ]);
+}
+
+
 
 
     // Fungsi untuk menghitung jarak antara dua titik (latitude, longitude)

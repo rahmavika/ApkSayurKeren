@@ -76,16 +76,20 @@
                                 </div>
                                 <br>
                                 <div class="form-group">
+                                    <h6>Total Harga: <span id="totalHarga" style="color: #0B773D;">Rp {{ $totalHargaProduk }}</span></h6>
+                                    <input type="hidden" id="totalHargaInput" name="total_harga" value="{{ $totalHargaProduk }}">
+                                </div>
+                                <div class="form-group">
                                     <h6>Ongkir: <span id="ongkir" style="color: #0B773D;">Rp 0</span></h6>
                                     <input type="hidden" id="ongkirInput" name="ongkir" value="0">
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group" id="diskonSection" style="display: none;"> <!-- Awalnya disembunyikan -->
                                     <h6>Diskon: <span id="diskon" style="color: #D32F2F;">Rp 0</span></h6>
                                     <input type="hidden" id="diskonInput" name="diskon" value="0">
                                 </div>
                                 <div class="form-group">
-                                    <h6>Total Harga: <span id="totalHarga" style="color: #0B773D;">Rp {{ $totalHarga }}</span></h6>
-                                    <input type="hidden" id="totalHargaInput" name="total_harga" value="{{ $totalHarga }}">
+                                    <h6>Total Pembayaran: <span id="totalPembayaran" style="color: #0B773D;">Rp 0</span></h6>
+                                    <input type="hidden" id="totalPembayaranInput" name="total_pembayaran" value="0">
                                 </div>
                                 <div class="mt-3 text-center">
                                     <button type="submit" class="btn w-100 py-2" style="background-color: #0B773D; border-color: #0B773D; color: white;">Pesan Sekarang</button>
@@ -196,24 +200,40 @@
         ongkir = Math.round(ongkir / 1000) * 1000; // Pembulatan ke kelipatan 1000 jika jarak >= 0.5 km
     }
 
-    const totalHargaTanpaOngkir = {{ $totalHarga }}; // Total harga sebelum ongkir
-    const totalHargaDenganOngkir = totalHargaTanpaOngkir + ongkir; // Menambahkan ongkir ke total harga
+    const totalHargaProduk = {{ $totalHargaProduk }}; // Total harga produk
 
-    // Update ongkir
+    // Ambil diskon dari promo jika ada
+    let diskon = 0;
+    const isPromoActive = {{ $promo ? 'true' : 'false' }}; // Cek apakah promo aktif
+
+    // Hitung diskon pada total harga produk
+    if (isPromoActive) {
+        const diskonPersentase = {{ $promo->diskon ?? 0 }} / 100; // Hitung persentase diskon
+        diskon = totalHargaProduk * diskonPersentase; // Hitung diskon berdasarkan harga produk
+
+        // Tampilkan bagian diskon
+        document.getElementById('diskonSection').style.display = 'block'; // Tampilkan diskon
+    } else {
+        // Sembunyikan bagian diskon jika tidak ada promo
+        document.getElementById('diskonSection').style.display = 'none';
+    }
+
+    // Total pembayaran = Total harga produk - diskon + ongkir
+    const totalPembayaran = (totalHargaProduk - diskon) + ongkir; // Total pembayaran yang benar
+
+    // Menampilkan ongkir dan diskon
     document.getElementById('ongkir').innerText = `Rp ${ongkir.toLocaleString()}`;
     document.getElementById('ongkirInput').value = ongkir;
-
-    // Diskon 10% pada total harga setelah ongkir
-    const diskon = totalHargaDenganOngkir * 0.10; // Misalnya diskon 10%
-    const totalHargaSetelahDiskon = totalHargaDenganOngkir - diskon; // Total harga setelah diskon
-
-    // Menampilkan diskon
-    document.getElementById('diskon').innerText = `Diskon: Rp ${diskon.toLocaleString()}`;
+    document.getElementById('diskon').innerText = `Rp ${diskon.toLocaleString()}`;
     document.getElementById('diskonInput').value = diskon;
 
-    // Update total harga yang sudah termasuk diskon dan ongkir
-    document.getElementById('totalHarga').innerText = `Rp ${totalHargaSetelahDiskon.toLocaleString()}`;
-    document.getElementById('totalHargaInput').value = totalHargaSetelahDiskon;
+    // Update total harga yang sudah termasuk ongkir dan diskon
+    document.getElementById('totalHarga').innerText = `Rp ${totalHargaProduk.toLocaleString()}`; // Total harga produk tetap
+    document.getElementById('totalHargaInput').value = totalHargaProduk;
+
+    // Menampilkan total pembayaran setelah ongkir dan diskon dihitung
+    document.getElementById('totalPembayaran').innerText = `Rp ${totalPembayaran.toLocaleString()}`;
+    document.getElementById('totalPembayaranInput').value = totalPembayaran; // Menyimpan total pembayaran di input tersembunyi
 });
 
 

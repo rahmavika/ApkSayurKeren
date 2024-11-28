@@ -30,8 +30,26 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 //     return view('admin.dashboard');
 // });
 
-Route::get('/dashboard', [ProdukController::class, 'jumlahProduk'])->name('dashboard');
+// // Rute untuk dashboard
+// Route::middleware(['auth', 'role:admin,super_admin'])->group(function () {
+//     Route::get('/dashboard', function () {
+//         return view('dashboard.index');
+//     })->name('dashboard.index');
+// });
+// Route::get('/dashboard', [ProdukController::class, 'jumlahProduk'])->name('dashboard');
 
+// Route::middleware(['auth', 'role:admin,super_admin'])->group(function () {
+//     Route::get('/dashboard', [ProdukController::class, 'jumlahProduk'])->name('dashboard.index');
+// });
+
+Route::middleware(['auth', 'role:admin,super_admin'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard.index');
+    })->name('dashboard.index');
+});
+
+// Rute untuk jumlah produk (misalnya: /dashboard/produk)
+Route::get('/dashboard', [ProdukController::class, 'jumlahProduk'])->name('dashboard.produk')->middleware(['auth', 'role:admin']);
 
 Route::get('/semuaproduk', function () {
     // Ambil semua produk beserta stoknya
@@ -65,74 +83,61 @@ Route::post('/logout', [LoginController::class, 'logout']);
 
 Route::get('/detailpelanggan', function () {
     return view('pelanggan.detailpelanggan');
-});
+})->middleware(['auth', 'role:pelanggan']);
 
 // Route::post('/update-profile', [PenggunaController::class, 'update'])->name('update-profile');
 Route::get('/editprofile', function () {
     return view('pelanggan.editprofile');
-});
+})->middleware(['auth', 'role:pelanggan']);
 
-Route::get('/edit-profile', [PenggunaController::class, 'edit'])->name('edit-profile');
-Route::put('/edit-profile', [PenggunaController::class, 'update'])->name('update-profile');
+Route::get('/edit-profile', [PenggunaController::class, 'edit'])->name('edit-profile')->middleware(['auth', 'role:pelanggan']);
+Route::put('/edit-profile', [PenggunaController::class, 'update'])->name('update-profile')->middleware(['auth', 'role:pelanggan']);
 
 
 Route::middleware(['auth'])->group(function () {
     Route::resource('keranjangs', KeranjangController::class);
-});
+})->middleware(['auth', 'role:pelanggan']);
 
 // web.php
-Route::post('/keranjang/tambah/{id}', [KeranjangController::class, 'tambah'])->middleware('auth');
-Route::get('/keranjang', [KeranjangController::class, 'show'])->name('keranjang.show');
+Route::post('/keranjang/tambah/{id}', [KeranjangController::class, 'tambah'])->middleware(['auth', 'role:pelanggan']);
+Route::get('/keranjang', [KeranjangController::class, 'show'])->name('keranjang.show')->middleware(['auth', 'role:pelanggan']);
 
-Route::resource('/admin-kategori', KategoriController::class);
-Route::resource('/admin-stok', StokController::class);
-Route::resource('/admin-batchStok', BatchStokController::class);
-Route::get('/admin-stok/{id}/tambahStok', [StokController::class, 'tambahStok'])->name('admin-stok.tambahStok');
+Route::resource('/admin-kategori', KategoriController::class)->middleware(['auth', 'role:admin']);
+Route::resource('/admin-stok', StokController::class)->middleware(['auth', 'role:admin']);
+Route::resource('/admin-batchStok', BatchStokController::class)->middleware(['auth', 'role:admin']);
+Route::get('/admin-stok/{id}/tambahStok', [StokController::class, 'tambahStok'])->name('admin-stok.tambahStok')->middleware(['auth', 'role:admin']);
 
-Route::resource('/admin-produk', ProdukController::class);
-Route::get('/admin-batchStok/{produk_id}', [BatchStokController::class, 'show'])->name('batchstok.show');
-Route::get('/admin-batchStok/{id}/edit', [BatchStokController::class, 'edit'])->name('admin-batchStok.edit');
-Route::put('/admin-batchStok/{id}', [BatchStokController::class, 'update'])->name('admin-batchStok.update');
+Route::resource('/admin-produk', ProdukController::class)->middleware('auth');
+Route::get('/admin-batchStok/{produk_id}', [BatchStokController::class, 'show'])->name('batchstok.show')->middleware(['auth', 'role:admin']);
+Route::get('/admin-batchStok/{id}/edit', [BatchStokController::class, 'edit'])->name('admin-batchStok.edit')->middleware(['auth', 'role:admin']);
+Route::put('/admin-batchStok/{id}', [BatchStokController::class, 'update'])->name('admin-batchStok.update')->middleware(['auth', 'role:admin']);
 
-Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show')->middleware('auth');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-Route::get('/checkout/{id}/detail', [CheckoutController::class, 'detail'])->name('checkout.detail');
+Route::get('/checkout', [CheckoutController::class, 'show'])->name('checkout.show')->middleware(['auth', 'role:pelanggan']);
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store')->middleware(['auth', 'role:pelanggan']);
+Route::get('/checkout/{id}/detail', [CheckoutController::class, 'detail'])->name('checkout.detail')->middleware(['auth', 'role:pelanggan']);
 
-Route::get('/riwayat-belanja', [RiwayatBelanjaController::class, 'index'])->name('riwayat-belanja');
-Route::post('/upload-bukti/{id}', [RiwayatBelanjaController::class, 'uploadBukti'])->name('upload.bukti');
+Route::get('/riwayat-belanja', [RiwayatBelanjaController::class, 'index'])->name('riwayat-belanja')->middleware(['auth', 'role:pelanggan']);
+Route::post('/upload-bukti/{id}', [RiwayatBelanjaController::class, 'uploadBukti'])->name('upload.bukti')->middleware(['auth', 'role:pelanggan']);
 
 
-Route::get('/admin-pelanggan', [PenggunaController::class, 'index'])->name('admin.admin-pelanggan.index');
-Route::delete('/admin-pelanggan/{id}', [PenggunaController::class, 'destroy'])->name('admin.admin-pelanggan.destroy');
+Route::get('/admin-pelanggan', [PenggunaController::class, 'index'])->name('admin.admin-pelanggan.index')->middleware(['auth', 'role:admin']);
+Route::delete('/admin-pelanggan/{id}', [PenggunaController::class, 'destroy'])->name('admin.admin-pelanggan.destroy')->middleware(['auth', 'role:admin']);
 
-Route::resource('/admin-promo', PromoController::class);
+Route::resource('/admin-promo', PromoController::class)->middleware(['auth', 'role:admin']);
 
-Route::resource('/admin-pengelola', PengelolaController::class);
+Route::resource('/admin-pengelola', PengelolaController::class)->middleware(['auth', 'role:admin']);
 
 // ini route yang ika tambha
 Route::get('/pesanan', function () {
     return view('pengelola.pesanan');
-});
+})->middleware(['auth', 'role:pengelola']);
 
-Route::get('/pesanan', [CheckoutController::class, 'index'])->name('checkouts.index');
-Route::get('/pesanan/{id}', [CheckoutController::class, 'show'])->name('checkouts.show');
-Route::post('/pesanan/{id}/confirm', [CheckoutController::class, 'confirm'])->name('checkouts.confirm');
+Route::get('/pesanan', [CheckoutController::class, 'index'])->name('checkouts.index')->middleware(['auth', 'role:pengelola']);
+Route::get('/pesanan/{id}', [CheckoutController::class, 'show'])->name('checkouts.show')->middleware(['auth', 'role:pengelola']);
+Route::post('/pesanan/{id}/confirm', [CheckoutController::class, 'confirm'])->name('checkouts.confirm')->middleware(['auth', 'role:pengelola']);
 
-Route::get('/pesanan', [CheckoutController::class, 'showPesanan']);
+Route::get('/pesanan', [CheckoutController::class, 'showPesanan'])->middleware(['auth', 'role:pengelola']);
 // Route::put('/pesanan/{id}/update-status', [CheckoutController::class, 'updateStatus'])->name('checkouts.updateStatus');
-Route::put('/checkouts/{id}/update-status', [CheckoutController::class, 'updateStatus'])->name('checkouts.updateStatus');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Route::put('/checkouts/{id}/update-status', [CheckoutController::class, 'updateStatus'])->name('checkouts.updateStatus')->middleware(['auth', 'role:pengelola']);
+Route::post('/checkouts/{id}/send-message', [CheckoutController::class, 'sendMessage'])->name('checkouts.sendMessage');
 

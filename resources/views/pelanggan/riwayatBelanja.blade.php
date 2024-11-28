@@ -56,6 +56,7 @@
                                         <th scope="col">Total Harga</th>
                                         <th scope="col">Bukti Transfer</th>
                                         <th scope="col">Status</th>
+                                        <th scope="col">Pesan</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -91,6 +92,13 @@
                                                 <span class="badge" style="background-color: #081958; color: white;">Dikirim</span> <!-- Biru untuk dikirim -->
                                             @elseif($checkout->status == 'selesai')
                                                 <span class="badge" style="background-color: #0b773d; color: white;">Selesai</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($checkout->catatan_admin)
+                                                <span class="small">{{ $checkout->catatan_admin }}</span> <!-- Tampilkan pesan -->
+                                            @else
+                                                <span class="small">-</span> <!-- Jika tidak ada pesan -->
                                             @endif
                                         </td>
                                     </tr>

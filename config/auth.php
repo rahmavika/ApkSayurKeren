@@ -40,6 +40,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // Guard untuk pengguna
+        'pengguna' => [
+            'driver' => 'session',
+            'provider' => 'penggunas',
+        ],
     ],
 
     /*
@@ -63,6 +68,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => App\Models\Pengguna::class,
+        ],
+        // Provider untuk pengguna
+        'penggunas' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Pengguna::class, // Model khusus untuk pengguna
         ],
 
         // 'users' => [
@@ -93,6 +103,13 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+        // Reset password untuk pengguna
+        'penggunas' => [
+            'provider' => 'penggunas',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,

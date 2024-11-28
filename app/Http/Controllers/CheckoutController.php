@@ -18,13 +18,13 @@ class CheckoutController extends Controller
      */
     public function index()
     {
-        $checkouts = Checkout::paginate(10); // Gunakan paginate untuk hasil paginasi
+        $checkouts = Checkout::latest()->paginate(10); // Gunakan paginate untuk hasil paginasi
         return view('pengelola.pesanan', compact('checkouts'));
     }
 
     public function showPesanan()
     {
-        $checkouts = Checkout::paginate(10); // Gunakan paginate untuk mendukung pagination
+        $checkouts = Checkout::latest()->paginate(10); // Gunakan paginate untuk mendukung pagination
         return view('pengelola.pesanan', compact('checkouts')); // Kirim data ke view
     }
 
@@ -56,6 +56,24 @@ class CheckoutController extends Controller
         // Redirect dengan pesan sukses
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
     }
+
+    public function sendMessage(Request $request, $id)
+{
+    // Validasi input
+    $request->validate([
+        'catatan_admin' => 'required|string|max:255', // Validasi pesan
+    ]);
+
+    // Cari pesanan berdasarkan ID
+    $checkout = Checkout::findOrFail($id);
+
+    // Tambahkan pesan baru ke catatan_admin (atau jika pesan sudah ada, tambahkan ke pesan yang ada)
+    $checkout->catatan_admin = $checkout->catatan_admin . "\n" . $request->input('catatan_admin');
+    $checkout->save(); // Simpan perubahan ke database
+
+    // Redirect kembali dengan pesan sukses
+    return redirect()->back()->with('success', 'Pesan berhasil dikirim.');
+}
 
     /**
      * Store a newly created resource in storage.

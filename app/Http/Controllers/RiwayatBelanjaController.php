@@ -54,7 +54,7 @@ class RiwayatBelanjaController extends Controller
         // Simpan file
         $imageName = time() . '.' . $request->bukti_transfer->extension();
         $request->bukti_transfer->move(public_path('images/buktiTF'), $imageName);
-        $filePath = 'images/buktiTF/' . $imageName;
+        $filePath = 'images/buktiTF/' . $imageName; // Pastikan path relatif saja yang disimpan
 
         // Simpan path bukti transfer ke database
         $checkout->bukti_transfer = $filePath;
@@ -64,9 +64,10 @@ class RiwayatBelanjaController extends Controller
     // Respons JSON dengan path file
     return response()->json([
         'success' => true,
-        'bukti_path' => asset($filePath), // Kirim URL lengkap untuk melihat bukti
+        'bukti_path' => asset($filePath), // Tidak perlu menambahkan 'images/buktiTF' lagi
     ]);
 }
+
 
 
 }
